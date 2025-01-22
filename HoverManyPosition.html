@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hover Many Position</title>
+    <style>
+      .container {
+        display: flex;
+        flex-direction: column;
+        width: fit-content;
+        background-color: #232530;
+        border-radius: 10px;
+      }
+      .container .mask .text:nth-child(2) {
+        border-radius: 10px 10px 0 0;
+      }
+      .container .mask .text:last-child {
+        border-radius: 0 0 10px 10px;
+      }
+      /* Default */
+      .default .text {
+        color: white;
+      }
+      .mask .text {
+        color: #232530;
+        background-color: #4caf50;
+      }
+      /* All text should have that */
+      .text {
+        padding: 12px 10px;
+        font-family: "ADLaM Display";
+        font-size: 20px;
+        margin: 0px;
+        text-transform: uppercase;
+        text-align: right;
+        user-select: none;
+        cursor: pointer;
+      }
+      .mask {
+        position: absolute;
+        mask: url(#svg-mask);
+        -webkit-mask: url(#svg-mask); /* Pour la compatibilité avec certains navigateurs */
+      }
+      #star {
+        position: absolute;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        width: 24px;
+        z-index: 1;
+        transform: translate(-50%, -50%);
+        user-select: none;
+        pointer-events: none;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=ADLaM+Display&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div id="stars">
+        <svg
+          id="star"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 100 100"
+          fill="gold"
+          stroke="black"
+          stroke-width="4"
+        >
+          <polygon
+            points="50,0 62.5,37.5 100,50 62.5,62.5 50,100 37.5,62.5 0,50 37.5,37.5"
+          />
+        </svg>
+      </div>
+      <div class="default">
+        <p class="text">SECTEURS</p>
+        <p class="text">Design et stratÉgies</p>
+        <p class="text">langages</p>
+        <p class="text">frameworks</p>
+        <p class="text">outils</p>
+      </div>
+      <div class="mask">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          style="position: absolute; width: 100%; height: 100%; z-index: -1"
+        >
+          <mask id="svg-mask" x="0" y="0" width="100%" height="100%">
+            <rect x="0" y="0%" width="100%" fill="white" />
+          </mask>
+        </svg>
+        <p class="text">SECTEURS</p>
+        <p class="text">Design et stratégies</p>
+        <p class="text">langages</p>
+        <p class="text">frameworks</p>
+        <p class="text">outils</p>
+      </div>
+    </div>
+    <script>
+      console.clear();
+      (function createStars() {
+        const svg = document.querySelector("#star");
+        for (let i = 0; i < 3; i++) {
+          const clone = svg.cloneNode(true);
+          document.querySelector("#stars").appendChild(clone);
+        }
+      })();
+      (function animation(svgMaskNode, svgStarNodes, gsapAnimationStar) {
+        const parent = svgMaskNode.parentNode.parentNode;
+        const parentChildren = parent.children;
+        const rect = svgMaskNode.children[0];
+        const nbChildren = parentChildren.length - 1;
+        const heightPourcentage = 100 / nbChildren;
+        const heightPx = parent.getBoundingClientRect().height / nbChildren;
+        const reactiveTextFieldMaskHeight = (heightPx * 3) / 4;
+        // Sizing the rect dynamically
+        rect.setAttribute("height", `${heightPourcentage}%`);
+        // For each child when it's click we change the mask position
+        let activeTextField = {
+          index: 0,
+          middle: {
+            x: 0,
+            y: 0,
+          },
+        };
+        let activeMaskAnimation = true;
+        const texts = parent.querySelectorAll(".text");
+        /**
+         * @param {position} {x: number, y: number} The position of the mouse
+         * @param {middle} {x: number, y: number} The middle of the text
+         * @param {index} number The index of the text
+         */
+        function farestCornerTopBottom(position, middle, index) {
+          return "top";
+          if (index < texts.length / 2) {
+            return "bottom";
+          } else if (index > texts.length / 2) {
+            return "top";
+          } else {
+            return middle.y < position.y ? "top" : "bottom";
+          }
+        }
+        /**
+         * @param {position} {x: number, y: number} The position of the mouse
+         * @param {middle} {x: number, y: number} The middle of the text
+         */
+        function farestCornerLeftRight(position, middle) {
+          return position.x < middle.x ? "Right" : "Left";
+        }
+        // For each text we add an event listener
+        const corners = {
+          topLeft: {
+            x: parent.getBoundingClientRect().left,
+            y: parent.getBoundingClientRect().top,
+          },
+          topRight: {
+            x: parent.getBoundingClientRect().right,
+            y: parent.getBoundingClientRect().top,
+          },
+          bottomLeft: {
+            x: parent.getBoundingClientRect().left,
+            y: parent.getBoundingClientRect().bottom,
+          },
+          bottomRight: {
+            x: parent.getBoundingClientRect().right,
+            y: parent.getBoundingClientRect().bottom,
+          },
+        };
+        /** For each textfield :
+         * - Click listener:
+         *   + Stop the mask animation
+         *   + Animate the stars's falling
+         * - MouseOver listener:
+         *   + Reactive the mask animation
+         */
+        texts.forEach((text, index) => {
+          const middle = {
+            x:
+              text.getBoundingClientRect().left +
+              text.getBoundingClientRect().width / 2,
+            y:
+              text.getBoundingClientRect().top +
+              text.getBoundingClientRect().height / 2,
+          };
+
+          // Stop the animation when the mouse clicked on a text
+          text.addEventListener("click", (event) => {
+            activeMaskAnimation = false;
+            activeTextField.index = index;
+            activeTextField.middle = middle;
+            rect.style.y = `${(100 / (parentChildren.length - 1)) * index}%`;
+            const corner =
+              corners[
+                farestCornerTopBottom(event, middle, index) +
+                  farestCornerLeftRight(event, middle)
+              ];
+            // Star animation
+            svgStarNodes.forEach((svgStarNode, index) =>
+              gsapAnimationStar(event, svgStarNode, index, middle, corner)
+            );
+          });
+          /** Reactive the animation when (and):
+           * - the mouse is over the text
+           * - the dy between the middle of the textfield and the cursor is higher than the size of the textfield
+           */
+          text.addEventListener("mousemove", (event) => {
+            console.log({
+              index,
+              activeTextField: activeTextField.index,
+              middle: middle.y,
+              clientY: event.clientY,
+              heightPx,
+            });
+            if (
+              index !== activeTextField.index &&
+              Math.abs(activeTextField.middle.y - event.clientY) >
+                reactiveTextFieldMaskHeight
+            )
+              activeMaskAnimation = true;
+          });
+        });
+        // When the mouse is over the parent we change the mask position
+        parent.addEventListener("mousemove", (event) => {
+          if (!activeMaskAnimation) return;
+          const rectHeight = rect.getBoundingClientRect().height;
+          const parentRect = parent.getBoundingClientRect();
+          const mouseY = event.clientY - parentRect.top;
+          const newY = Math.min(
+            Math.max(mouseY - rectHeight / 2, 0),
+            parentRect.height - rectHeight
+          );
+          rect.style.y = `${(newY / parentRect.height) * 100}%`;
+        });
+      })(
+        document.querySelector("#svg-mask"),
+        document.querySelectorAll("#star"),
+        function gsapAnimationStar(event, svgStarNode, index, middle, corner) {
+          const timeout = 250 * index;
+
+          const [dx, dy] = [
+            [0, -10],
+            [20, -10],
+            [0, 10],
+            [20, 10],
+          ][index] || [0, 0];
+
+          setTimeout(() => {
+            gsap.fromTo(
+              svgStarNode,
+              { x: corner.x + dx, y: corner.y + dy, opacity: 0 },
+              {
+                x: middle.x + dx,
+                y: middle.y + dy,
+                opacity: 1,
+                duration: 0.5,
+                onComplete: () => {
+                  gsap.to(svgStarNode, {
+                    duration: 0.5,
+                    opacity: 0,
+                  });
+                },
+              }
+            );
+          }, timeout);
+        }
+      );
+    </script>
+  </body>
+</html>

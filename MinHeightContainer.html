@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        gap: 20px;
+        align-content: center;
+        flex-direction: column;
+      }
+      .container {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+      }
+      #shape {
+        background-color: #36394a;
+        width: 300px;
+        display: flex;
+        flex-wrap: wrap;
+        transition: transform 0.4s ease;
+        height: fit-content;
+      }
+      #text {
+        width: fit-content;
+        height: fit-content;
+        color: black;
+        padding: 4px;
+      }
+      #shape p {
+        width: 100%;
+        text-align: center;
+        color: white;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="shape"><p>NOT REASSIGNED</p></div>
+      <div id="shape"><p>TEST TWEEN LITE</p></div>
+    </div>
+    <div class="container">
+      <div id="shape">
+        <p>FFD STRATEGY : <span></span></p>
+      </div>
+      <div id="shape">
+        <p>BFD STRATEGY : <span></span></p>
+      </div>
+      <div id="shape">
+        <p>CUSTOM STRATEGY : <span></span></p>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenLite.min.js"></script>
+
+    <script>
+      const containers = document.querySelectorAll("#shape");
+      [
+        50, 160, 40, 40, 30, 40, 170, 40, 50, 50, 70, 40, 160, 40, 40, 70, 40,
+        70, 40, 40, 30, 80, 40, 30, 50, 70, 50, 40, 30, 40, 170, 40, 50, 50, 70,
+        40, 160, 40, 40,
+
+        // 70,
+        // 50, 50, 50, 40, 40, 30, 70,
+      ];
+      const [testTweenLite, ...blocks] = [
+        "Java 21",
+        "C#",
+        "Dart",
+        "C++",
+        "Python",
+        "VueJs",
+        "Flutter",
+        "Aéronautique et Production",
+        "Ressources Humaines",
+        "ASP.NET",
+        "NextJs",
+        "Clean Architecture",
+        "Microservices",
+        "Monolithes évolutifs",
+        "TDD (Test Driven Development)",
+        "Agile/Scrum",
+        "Docker",
+        "Jenkins",
+        "Git",
+        "JIRA",
+        "JavaScript",
+        "Commerce de gros non spécialisé",
+        "Spring Boot",
+        "ReactJs",
+        "DevOps",
+        "SQL",
+        "Cypher",
+        "Codingame",
+        "Figma",
+        "Proof of Concept (POC)",
+      ].reduce((acc, current, index) => {
+        const nodes = createNodes(current, index);
+        return nodes.map((node, index) => [
+          ...acc[index],
+          {
+            width: node.getBoundingClientRect().width,
+            element: node,
+            order: index,
+          },
+        ]);
+      }, new Array(containers.length - 1).fill([]));
+      function createNodes(element, index) {
+        const node = document.createElement("div");
+        node.id = "text";
+        node.textContent = element;
+        node.style.backgroundColor = `hsl(${360 / (index + 1)},100%,${
+          40 + ((10 * index) % 20)
+        }%)`;
+        if (typeof element === "number") node.style.width = `${element - 8}px`;
+        node.style.order = index;
+
+        containers[0].appendChild(node);
+
+        const blocks = [];
+        for (let index = 1; index < containers.length; index++) {
+          const clone = node.cloneNode(true);
+          blocks.push(clone);
+          containers[index].appendChild(clone);
+        }
+        return blocks;
+      }
+
+      (() => {
+        const [x1, y1] = [
+          testTweenLite[0].element.offsetLeft,
+          testTweenLite[0].element.offsetTop,
+        ];
+        const [x2, y2] = [
+          testTweenLite[1].element.offsetLeft,
+          testTweenLite[1].element.offsetTop,
+        ];
+        console.log({ x1, y1, x2, y2 });
+        // TODO: REGLER SA !
+        TweenLite.fromTo(
+          testTweenLite[0].element,
+          0.5,
+          { x: x2, y: y2 },
+          { x: 0, y: 0, duration: 0.5, ease: "power1.inOut" }
+        );
+      })();
+
+      class Reasign {
+        constructor() {
+          this.nbElement = 0;
+          this.maxWidth = 300;
+          this._FFDStrategy = this._FFDStrategy.bind(this);
+          this._BFDStrategy = this._BFDStrategy.bind(this);
+          this._CustomStrategy = this._CustomStrategy.bind(this);
+        }
+        _FFDStrategy(items) {
+          const lines = [];
+          const maxWidth = this.maxWidth;
+          // On va stocker les "lignes" sous forme de tableau de tableaux
+          // Pour chaque item, on essaye de le placer selon FFD
+          items.forEach((item) => {
+            let placed = false;
+
+            for (let line of lines) {
+              const currentLineWidth = line.reduce(
+                (acc, el) => acc + el.width,
+                0
+              );
+              if (currentLineWidth + item.width <= maxWidth) {
+                line.push(item);
+                placed = true;
+                break;
+              }
+            }
+
+            if (!placed) {
+              // On crée une nouvelle ligne
+              lines.push([item]);
+            }
+          });
+          return lines;
+        }
+        _BFDStrategy(items) {
+          const lines = [];
+          items
+            // .sort((a, b) => b.width - a.width)
+            .forEach((item) => {
+              let bestLineIndex = -1; // index de la meilleure ligne trouvée
+              let bestLineLeftover = Infinity; // espace restant minimal pour l'item
+
+              // On parcourt les lignes existantes pour voir où l'item tient le mieux
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const leftover = this.maxWidth - line.used;
+
+                if (item.width <= leftover) {
+                  // L'item tient dans cette ligne
+                  const newLeftover = leftover - item.width;
+                  if (newLeftover < bestLineLeftover) {
+                    bestLineLeftover = newLeftover;
+                    bestLineIndex = i;
+                  }
+                }
+              }
+
+              // Si on a trouvé une ligne adaptée, on y ajoute l'item
+              if (bestLineIndex !== -1) {
+                lines[bestLineIndex].items.push(item);
+                lines[bestLineIndex].used += item.width;
+              } else {
+                // Sinon, on crée une nouvelle ligne
+                lines.push({
+                  used: item.width,
+                  items: [item],
+                });
+              }
+            });
+
+          return lines.map((line) => line.items);
+        }
+        _CustomStrategy(items) {
+          const lines = [];
+          function branchAndBoundClosestSubset(items, capacity) {
+            // 1) On trie en ordre décroissant de width pour améliorer le pruning.
+            items = [...items].sort((a, b) => b.width - a.width);
+
+            // Variables globales pour suivre la meilleure solution
+            let bestSum = 0;
+            let bestSubset = [];
+
+            // 2) Pré-calcul de la somme cumulée pour du pruning rapide
+            // sums[i] = somme de items[i].width + items[i+1].width + ...
+            const n = items.length;
+            const sums = new Array(n + 1).fill(0);
+            for (let i = n - 1; i >= 0; i--) {
+              sums[i] = sums[i + 1] + items[i].width;
+            }
+
+            // 3) DFS (backtracking) avec “branch & bound”
+            function backtrack(index, currentSum, chosen) {
+              // Si on a une somme meilleure, on met à jour
+              if (currentSum > bestSum) {
+                bestSum = currentSum;
+                bestSubset = chosen.slice(); // copie
+                // Si on a exactement capacity, on ne peut pas faire mieux => on coupe
+                if (bestSum === capacity) return;
+              }
+
+              // Si on a épuisé tous les items, on s'arrête
+              if (index >= n) return;
+
+              // PRUNING 1 : si currentSum + somme de tout ce qui reste
+              // ne peut même pas dépasser bestSum, plus la peine de continuer
+              const maxPossible = currentSum + sums[index];
+              if (maxPossible <= bestSum) {
+                return;
+              }
+
+              // On prend l'item suivant si possible
+              const item = items[index];
+              if (currentSum + item.width <= capacity) {
+                chosen.push(item);
+                backtrack(index + 1, currentSum + item.width, chosen);
+                chosen.pop();
+              }
+
+              // On saute l'item suivant
+              backtrack(index + 1, currentSum, chosen);
+            }
+
+            backtrack(0, 0, []);
+
+            return { bestSum, bestSubset };
+          }
+          function packClosestLinesBranchAndBound(items, capacity) {
+            let remaining = [...items];
+            const lines = [];
+
+            while (remaining.length > 0) {
+              const { bestSum, bestSubset } = branchAndBoundClosestSubset(
+                remaining,
+                capacity
+              );
+              if (bestSum === 0) {
+                // Impossible de placer quoi que ce soit : on arrête
+                break;
+              }
+              // Ajout de la ligne
+              lines.push(bestSubset);
+
+              // Retrait des items utilisés
+              const usedSet = new Set(bestSubset.map((it) => it.element));
+              remaining = remaining.filter((it) => !usedSet.has(it.element));
+            }
+
+            return lines;
+          }
+          return packClosestLinesBranchAndBound(items, this.maxWidth);
+        }
+        _ReorderStrategy(blocks) {
+          return blocks.map((container, index) => {
+            const span =
+              container[0].element.parentElement.getElementsByTagName(
+                "span"
+              )[0];
+
+            const strategy = (() => {
+              switch (index) {
+                case 0:
+                  return this._FFDStrategy;
+                case 1:
+                  return this._BFDStrategy;
+                case 2:
+                  return this._CustomStrategy;
+              }
+            })();
+            const start = performance.now();
+            const lines = strategy(container);
+            const end = performance.now();
+            span.textContent = `${lines.length} lines in ${(
+              end - start
+            ).toFixed(2)}ms`;
+            return lines;
+          });
+        }
+        Reasign(blocks) {
+          this._ReorderStrategy(blocks).forEach((lines) => {
+            let globalOrder = 0;
+            console.log(
+              lines
+                .map((line) =>
+                  line.map((element) => element.element.style.order).join(", ")
+                )
+                .join(" | ")
+            );
+            lines.forEach((line, index) => {
+              line.forEach((item, index) => {
+                item.element.style.order = globalOrder++;
+              });
+            });
+            this._nbElement += globalOrder;
+          });
+        }
+      }
+      new Reasign().Reasign(blocks);
+    </script>
+  </body>
+</html>

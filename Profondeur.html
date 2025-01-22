@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <title>Profondeur</title>
+    <style>
+      body {
+        margin: 0;
+        background-color: #550000;
+      }
+      .boxes-card {
+        display: flex;
+        height: 100vh;
+        perspective: 800px; /* Perspective pour simuler la profondeur */
+        flex-direction: column;
+        align-items: center;
+      }
+      .scroll {
+        width: 100%;
+        height: 27px;
+        background-color: white;
+        display: flex;
+        user-select: none;
+      }
+      .container {
+        transform-style: preserve-3d;
+        position: relative;
+        flex: 1;
+        width: 100%;
+      }
+      .element {
+        top: 0;
+        position: absolute;
+        width: 250px;
+        height: 300px;
+      }
+      .element:hover {
+        background-color: wheat !important;
+        cursor: pointer;
+      }
+      .space {
+        flex: 1;
+      }
+      .scroller {
+        width: var(--width);
+        height: 100%;
+        background-color: #676767;
+        cursor: pointer;
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenLite.min.js"></script>
+  </head>
+  <body>
+    <div class="boxes-card">
+      <div class="container">
+        <div class="boxes">
+          <div class="center">
+            <div class="element"></div>
+            <div class="element"></div>
+            <div class="element"></div>
+            <div class="element"></div>
+            <div class="element"></div>
+          </div>
+        </div>
+      </div>
+      <div class="scroll">
+        <!-- Chevron gauche -->
+        <i class="material-icons" width="50">chevron_left</i>
+        <div class="space">
+          <div class="scroller" style="--width: 50px"></div>
+        </div>
+        <!-- Chevron droit -->
+        <i class="material-icons">chevron_right</i>
+      </div>
+    </div>
+    <script>
+      // Size the container to fit the elements
+      const [maxWidth, _] = (function sizing(container) {
+        const [maxWidth, maxHeight] = Array.from(
+          container.querySelectorAll(".element")
+        ).reduce(
+          ([currentMaxWidth, currentMaxHeight], cube) => {
+            // Obtenir la largeur et hauteur de l'élément
+            const { width, height } = cube.getBoundingClientRect();
+            return [
+              Math.max(currentMaxWidth, width),
+              Math.max(currentMaxHeight, height),
+            ];
+          },
+          [-Infinity, -Infinity]
+        );
+        container.setAttribute("data-width", maxWidth);
+        container.setAttribute("data-height", maxHeight);
+        return [maxWidth, maxHeight];
+      })(document.querySelector(".container"));
+      (function positionning(container, maxWidth, spacing = 20) {
+        container;
+      })(document.querySelector(".container"), maxWidth);
+      // Customizing colors
+      (function colorize() {
+        const elements = document.querySelectorAll(".element");
+        const [length, maxLength] = [
+          parseInt(elements.length / 2),
+          elements.length,
+        ];
+        if (maxLength === 0) return;
+        for (let i = 1; i <= length; i++) {
+          const Before = length - i;
+          const After = i + length;
+          const colorBefore = (360 / maxLength) * i;
+          const colorAfter = (360 / maxLength) * After;
+          elements[
+            Before
+          ].style.backgroundColor = `hsl(${colorBefore}, 0%, 50%)`;
+
+          if (After >= maxLength) break;
+          elements[After].style.backgroundColor = `hsl(${colorAfter}, 0%, 50%)`;
+        }
+        elements[length].style.backgroundColor = `hsl(360, 0%, 50%)`;
+      })();
+    </script>
+    <!-- Animation JS -->
+    <script>
+      (function mouseMouvement(innerWidth) {
+        let initialClickX = null;
+        document.addEventListener("mousedown", (event) => {
+          initialClickX = event.clientX;
+        });
+        document.addEventListener("mousemove", (event) => {
+          if (initialClickX === null) return;
+
+          const container = document.querySelector(".container");
+          const { clientX } = event;
+          const percentage = ((clientX - initialClickX) / innerWidth) * 100;
+          console.log(percentage);
+          // Use the percentage variable or remove this comment if not needed
+        document.addEventListener("mouseup", () => {
+          initialClickX = null;
+        });
+      })(window.innerWidth);
+    </script>
+  </body>
+</html>

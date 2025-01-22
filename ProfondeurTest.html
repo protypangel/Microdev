@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profondeur</title>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #282c34;
+        perspective: 800px; /* Perspective pour simuler la profondeur */
+      }
+      .container {
+        transform-style: preserve-3d;
+        position: relative;
+        width: var(--width);
+        height: var(--height);
+      }
+      .cube {
+        transform-style: preserve-3d;
+        position: absolute;
+      }
+      .cube .front {
+        position: sticky;
+        background: rgba(219, 52, 197, 1);
+        width: 250px;
+        height: 300px;
+        border: 2 solid #ecf0f1;
+        transform: rotateY(0deg) translateZ(0px);
+      }
+      .cube .otherFaces {
+        position: absolute;
+        transform-style: preserve-3d;
+        width: var(--width);
+        height: var(--height);
+        top: 0px;
+      }
+      /* Faces du cube */
+      .cube .otherFaces .back {
+        position: absolute;
+        width: var(--width);
+        height: var(--height);
+        background: var(--colorBehind);
+        border: var(--border) solid #ecf0f1;
+      }
+
+      .cube .otherFaces > .top,
+      .bottom {
+        position: absolute;
+        width: calc(var(--width) + 2 * var(--border));
+        height: var(--deep);
+        background: var(--colorDeepTopBottom);
+      }
+      .cube .otherFaces > .right,
+      .left {
+        position: absolute;
+        width: var(--deep);
+        height: calc(var(--height) + 2 * var(--border));
+        background: var(--colorDeepLeftRight);
+      }
+
+      .back {
+        transform: rotateY(180deg) translateZ(calc(var(--deep)));
+      }
+      .right {
+        transform: rotateY(90deg)
+          translateZ(calc(2 * var(--border) + var(--width) - var(--deep) / 2))
+          translateX(calc(var(--deep) / 2));
+      }
+      .left {
+        transform: rotateY(-90deg) translateX(calc(var(--deep) / -2))
+          translateZ(calc(var(--deep) / 2));
+      }
+      .top {
+        transform: rotateX(90deg) translateZ(calc(var(--deep) / 2))
+          translateY(calc(var(--deep) / -2));
+      }
+      .bottom {
+        transform: rotateX(-90deg) translateY(calc(var(--deep) / 2))
+          translateZ(calc(2 * var(--border) + var(--height) - var(--deep) / 2));
+      }
+      .front:hover {
+        background-color: wheat !important;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="cube">
+        <div class="front"></div>
+      </div>
+      <div class="cube">
+        <div class="front"></div>
+      </div>
+
+      <div class="cube">
+        <div class="front"></div>
+      </div>
+      <div class="cube">
+        <div class="front"></div>
+      </div>
+      <div class="cube">
+        <div class="front"></div>
+      </div>
+    </div>
+    <!-- Changement du container -->
+    <script>
+      const [maxWidth, maxHeight] = Array.from(
+        document.querySelectorAll(".container .cube")
+      ).reduce(
+        ([currentMaxWidth, currentMaxHeight], cube) => {
+          // Obtenir la largeur et hauteur de l'élément
+          const { width, height } = cube.getBoundingClientRect();
+          return [
+            Math.max(currentMaxWidth, width),
+            Math.max(currentMaxHeight, height),
+          ];
+        },
+        [-Infinity, -Infinity]
+      );
+      const style = document.querySelector(".container").style;
+      style.setProperty("--width", maxWidth + "px");
+      style.setProperty("--height", maxHeight + "px");
+    </script>
+    <!-- Position initial de chaque cub -->
+    <script>
+      (function (startIndexFIFO) {
+        const cubes = document.querySelectorAll(".cube");
+        const [length, maxLength] = [parseInt(cubes.length / 2), cubes.length];
+        for (let i = 0; i < maxLength; i++) {
+          const cube = cubes[i];
+          cube.style.transform = `translateZ(${-5 * i}px) translateX(${
+            8 * i
+          }px)`;
+          cube.querySelector(".front").style.backgroundColor = `hsl(${
+            (360 / maxLength) * i
+          }, 100%, 50%)`;
+          console.log(cube.querySelector(".front"));
+        }
+      })(2);
+    </script>
+    <!-- Rajouté les div necessaire pour chaque cub -->
+    <script>
+      //   document.querySelectorAll(".cube").forEach(function (cube) {
+      //     function createDiv(className) {
+      //       const div = document.createElement("div");
+      //       div.className = className;
+      //       return div;
+      //     }
+      //     const otherFaces = createDiv("otherFaces");
+      //     otherFaces.appendChild(createDiv("back"));
+      //     otherFaces.appendChild(createDiv("right"));
+      //     otherFaces.appendChild(createDiv("left"));
+      //     otherFaces.appendChild(createDiv("top"));
+      //     otherFaces.appendChild(createDiv("bottom"));
+      //     cube.appendChild(otherFaces);
+      //   });
+    </script>
+    <!-- Animation JS -->
+    <script>
+      document.querySelectorAll(".container").forEach(function (cube) {
+        let isDragging = false; // Pour suivre si la souris est enfoncée
+        let startX, startY; // Position initiale du clic
+        let currentRotationX = 0,
+          currentRotationY = 0; // Rotation actuelle du cube
+        // Variable pour gérer le zoom
+        let cubeScale = 1;
+
+        // Lorsque la souris est enfoncée
+        document.addEventListener("mousedown", (event) => {
+          isDragging = true;
+          startX = event.clientX;
+          startY = event.clientY;
+        });
+
+        // Lorsque la souris est relâchée
+        document.addEventListener("mouseup", () => {
+          isDragging = false;
+        });
+
+        // Lorsque la souris est déplacée
+        document.addEventListener("mousemove", (event) => {
+          if (!isDragging) return;
+
+          const deltaX = event.clientX - startX;
+          const deltaY = event.clientY - startY;
+
+          // Calcul des nouvelles rotations en fonction du déplacement
+          currentRotationY += deltaX * 0.2; // Sens horizontal (rotation Y)
+          currentRotationX -= deltaY * 0.2; // Sens vertical (rotation X)
+
+          // Applique les rotations au cube
+          cube.style.transform = `scale(${cubeScale}) rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg)`;
+
+          // Met à jour la position initiale pour un mouvement fluide
+          startX = event.clientX;
+          startY = event.clientY;
+        });
+
+        // Écoute l'événement de molette pour zoomer
+        document.addEventListener("wheel", (event) => {
+          // Ajuste l'échelle en fonction du défilement
+          const zoomFactor = 0.1;
+          if (event.deltaY < 0) {
+            // Zoom avant (scroll vers le haut)
+            cubeScale += zoomFactor;
+          } else if (event.deltaY > 0) {
+            // Zoom arrière (scroll vers le bas)
+            cubeScale = Math.max(0.5, cubeScale - zoomFactor); // Limite pour éviter un zoom trop petit
+          }
+
+          // Applique l'échelle au cube
+          cube.style.transform = `scale(${cubeScale}) rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg)`;
+        });
+      });
+    </script>
+    <!-- Pour chaque cube, changer les propriété css -->
+    <script>
+      document.querySelectorAll(".cube").forEach(function (cube) {
+        const front = cube.querySelector(".front");
+        const style = cube.style;
+        style.setProperty("--width", front.offsetWidth + "px");
+        style.setProperty("--height", front.offsetHeight + "px");
+        style.setProperty("--border", getComputedStyle(front).borderWidth);
+        style.setProperty("--deep", "6px");
+        style.setProperty("--colorBehind", "rgba(52, 152, 219, 1)");
+        style.setProperty("--colorDeepTopBottom", "#000");
+        style.setProperty("--colorDeepLeftRight", "#000");
+      });
+    </script>
+    <!-- Hovered -->
+    <script>
+      (function () {
+        document.querySelectorAll(".front").forEach(function (front) {
+          //   front.addEventListener("mouseover", function () {
+          //     front.style.backgroundColor = "wheat";
+          //   });
+          //   front.addEventListener("mouseout", function () {
+          //     front.style.backgroundColor = front.style.backgroundColor;
+          //   });
+        });
+      })();
+    </script>
+  </body>
+</html>
