@@ -1,7 +1,8 @@
 import { AnimationOptimizer, DXYStarsOptimizer } from "./optimizer.js";
 import { GsapMaskNodeCaller, GsapAnimationStarCaller } from "./gsap.js";
-import { GetFarestCorner } from "./farestCorner.js";
+import { GetCorners, GetFarestCorner } from "./farestCorner.js";
 import { OptimizationConfiguration } from "./configuration.js";
+import { GetMiddleText } from "./getMiddle.js";
 
 export function Animation(
   divMaskContainer,
@@ -59,14 +60,6 @@ export function Animation(
   let activeMaskAnimation = true;
   // Get all texts containers
   const texts = divMaskContainer.querySelectorAll(".text");
-  // Get the size of the star
-
-  // TODO: Traduire par chatgpt
-  // If the user ask for optimization
-  // The caller will be swaped by an optmized one that return :
-  // * Only a const
-  // * The default one, configurated by the user
-
   /**
      * Represents a map of corner names to their positions in 2D space.
      * Each key is a corner name (string), and each value is an object
@@ -81,48 +74,8 @@ export function Animation(
      *
      * @type {Map<string, {x: number, y: number}>}
      */
-  const corners = Object.entries({
-    topleft: {
-      x: divMaskContainer.getBoundingClientRect().left,
-      y: divMaskContainer.getBoundingClientRect().top,
-      reverse: "X",
-    },
-    topright: {
-      x: divMaskContainer.getBoundingClientRect().right,
-      y: divMaskContainer.getBoundingClientRect().top,
-      reverse: "",
-    },
-    bottomleft: {
-      x: divMaskContainer.getBoundingClientRect().left,
-      y: divMaskContainer.getBoundingClientRect().bottom,
-      reverse: "Y",
-    },
-    bottomright: {
-      x: divMaskContainer.getBoundingClientRect().right,
-      y: divMaskContainer.getBoundingClientRect().bottom,
-      reverse: "XY",
-    },
-  }).reduce((acc, [key, { reverse, ...other }]) => {
-    const reverseString = (reverse ?? "").toLowerCase();
-    acc[key] = {
-      ...other,
-      reverse: {
-        x: reverseString.includes("x"),
-        y: reverseString.includes("y"),
-      },
-    };
-    return acc;
-  }, {});
-  function getMiddleText(text) {
-    return {
-      x:
-        text.getBoundingClientRect().left +
-        text.getBoundingClientRect().width / 2,
-      y:
-        text.getBoundingClientRect().top +
-        text.getBoundingClientRect().height / 2,
-    };
-  }
+  const corners = GetCorners(divMaskContainer);
+
   /**
    * Sets up event listeners for each text field to handle animations.
    *
@@ -137,7 +90,7 @@ export function Animation(
    * @param {number} index - The index of the textfield
    */
   texts.forEach((text, index) => {
-    const middle = getMiddleText(text);
+    const middle = GetMiddleText(text);
 
     // Stop the animation when the mouse clicked on a text
     text.addEventListener("click", (event) => {

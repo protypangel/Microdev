@@ -1,3 +1,37 @@
+export function GetCorners (divMaskContainer) {
+  return Object.entries({
+    topleft: {
+      x: divMaskContainer.getBoundingClientRect().left,
+      y: divMaskContainer.getBoundingClientRect().top,
+      reverse: "X",
+    },
+    topright: {
+      x: divMaskContainer.getBoundingClientRect().right,
+      y: divMaskContainer.getBoundingClientRect().top,
+      reverse: "",
+    },
+    bottomleft: {
+      x: divMaskContainer.getBoundingClientRect().left,
+      y: divMaskContainer.getBoundingClientRect().bottom,
+      reverse: "Y",
+    },
+    bottomright: {
+      x: divMaskContainer.getBoundingClientRect().right,
+      y: divMaskContainer.getBoundingClientRect().bottom,
+      reverse: "XY",
+    },
+  }).reduce((acc, [key, { reverse, ...other }]) => {
+    const reverseString = (reverse ?? "").toLowerCase();
+    acc[key] = {
+      ...other,
+      reverse: {
+        x: reverseString.includes("x"),
+        y: reverseString.includes("y"),
+      },
+    };
+    return acc;
+  }, {});
+}
 export function GetFarestCorner(event, middle, index, farestConfiguration) {
   const farestVertical = ["top", "bottom"].includes(
     (farestConfiguration.farestCornerTopBottom ?? "").toLowerCase()
