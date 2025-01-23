@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hover Many Position</title>
+    <style>
+      .container {
+        display: flex;
+        flex-direction: column;
+        width: fit-content;
+        background-color: #232530;
+        border-radius: 10px;
+      }
+      .container .mask .mask-container .text:first-child {
+        border-radius: 10px 10px 0 0;
+      }
+      .container .mask .mask-container .text:last-child {
+        border-radius: 0 0 10px 10px;
+      }
+      /* Default */
+      .default .text {
+        color: white;
+      }
+      .mask-container .text {
+        color: #232530;
+        background-color: #4caf50;
+      }
+      /* All text should have that */
+      .text {
+        padding: 12px 10px;
+        font-family: "ADLaM Display";
+        font-size: 20px;
+        margin: 0px;
+        text-transform: uppercase;
+        text-align: right;
+        user-select: none;
+        cursor: pointer;
+      }
+      .mask {
+        position: absolute;
+        mask: url(#svg-mask);
+        -webkit-mask: url(#svg-mask); /* Pour la compatibilité avec certains navigateurs */
+      }
+      #star {
+        position: absolute;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        width: 24px;
+        z-index: 1;
+        transform: translate(-50%, -50%);
+        user-select: none;
+        pointer-events: none;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=ADLaM+Display&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div id="stars">
+        <svg
+          id="star"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 100 100"
+          fill="gold"
+          stroke="black"
+          stroke-width="4"
+        >
+          <polygon
+            points="50,0 62.5,37.5 100,50 62.5,62.5 50,100 37.5,62.5 0,50 37.5,37.5"
+          />
+        </svg>
+      </div>
+      <div class="default"></div>
+      <div class="mask">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          style="position: absolute; width: 100%; height: 100%; z-index: -1"
+        >
+          <mask id="svg-mask" x="0" y="0" width="100%" height="100%">
+            <rect x="0" y="0%" width="100%" fill="white" />
+          </mask>
+        </svg>
+        <div class="mask-container"></div>
+      </div>
+    </div>
+    <script src="./DynamiclyCreate.js"></script>
+    <script src="./Animation.js"></script>
+    <script>
+      console.clear();
+      createTexts(
+        [
+          "SECTEURS",
+          "Design et stratégies",
+          "langages",
+          "frameworks",
+          "outils",
+        ],
+        document.querySelector(".default"),
+        document.querySelector(".mask-container")
+      );
+      createStars(
+        document.querySelector("#stars"),
+        document.querySelector("#star"),
+        3
+      );
+      const halfStarSize =
+        document.querySelector("#star").getBoundingClientRect().width / 2;
+      animation(
+        (divMaskContainer = document.querySelector(".mask")),
+        (svgMaskNode = document.querySelector("#svg-mask")),
+        (svgStarNodes = document.querySelectorAll("#star")),
+        function OrderDisplayedStars(reverseX, reverseY) {
+          console.log(reverseX);
+          return reverseX ? [0, 3, 2, 1] : [0, 3, 2, 1];
+        },
+        (DXYStars = {
+          values: [
+            [-20 - halfStarSize, -20 - halfStarSize],
+            [-halfStarSize, -20 - halfStarSize],
+            [-20 - halfStarSize, -halfStarSize],
+            [-halfStarSize, -halfStarSize],
+          ],
+          default: [0, 0],
+        }),
+        function gsapAnimationStarConfiguration(corner, middle, index) {
+          return {
+            timeout: 100 * index,
+            from: {
+              x: corner.x,
+              y: corner.y,
+              opacity: 1,
+            },
+            to: {
+              duration: 0.5,
+              x: middle.x,
+              y: middle.y,
+            },
+            complete: {
+              duration: 0.5,
+              opacity: 0,
+            },
+          };
+        },
+        function gsapMaskNodeConfiguration(heightPx, index) {
+          return {
+            from: {},
+            to: {
+              attr: { y: heightPx * index },
+            },
+          };
+        },
+        {
+          /** Optised the caller of function
+           * If you add the name your function inside the array, this function will be optimized.
+           * How ? Will always returned :
+           *  + The default value from [default.animationType.animationName] or it's own default config
+           *  +
+           */
+          // optimised: ["stop.star"],
+          default: {
+            // stop: {},
+          },
+          /** Functions that's permit to upgrade animations
+           */
+          functions: {
+            /** Stop should have function that's determine if you stop the function or no
+             * @return {true} the animation will be stoped
+             * @return {false} the animation will continue
+             */
+            stop: {
+              star: function (timeOfClicked) {
+                if (timeOfClicked > 1) return true;
+                return false;
+              },
+            },
+          },
+        },
+        {
+          farestCornerTopBottom: "top",
+          farestCornerLeftRight: "",
+        }
+      );
+    </script>
+  </body>
+</html>
