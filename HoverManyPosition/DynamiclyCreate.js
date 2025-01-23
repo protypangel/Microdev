@@ -1,4 +1,4 @@
-function createTexts(texts, defaultNode, maskNode) {
+export function CreateTexts(texts, defaultNode, maskNode) {
   texts.forEach((text) => {
     document.crea;
     const p = document.createElement("p");
@@ -8,7 +8,7 @@ function createTexts(texts, defaultNode, maskNode) {
     maskNode.appendChild(p.cloneNode(true));
   });
 }
-function createStars(parent, template, numberRepeat) {
+export function CreateStars(parent, template, numberRepeat) {
   const svg = template;
   for (let i = 0; i < numberRepeat; i++) {
     const clone = svg.cloneNode(true);

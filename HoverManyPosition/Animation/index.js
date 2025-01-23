@@ -1,11 +1,14 @@
-function animation(
+import { AnimationOptimizer, DXYStarsOptimizer } from "./optimizer.js";
+import { GsapMaskNodeCaller, GsapAnimationStarCaller } from "./gsap.js";
+import { GetFarestCorner } from "./farestCorner.js";
+import { OptimizationConfiguration } from "./configuration.js";
+
+export function Animation(
   divMaskContainer,
   svgMaskNode,
   svgStarNodes,
   OrderDisplayedStars = () => [],
-  DXYStars = {
-    default: [0, 0],
-  },
+  DXYStars,
   gsapAnimationStarConfiguration = function () {},
   gsapMaskNodeConfiguration = function () {},
   AnimationListener = {},
@@ -28,15 +31,20 @@ function animation(
   // The mask's height has the same each textfield's height
   // Remember that's each textfield has the same height
   rect.setAttribute("height", `${100 / nbTextField}%`);
-  // TODO: 3 Testing
-  function DXYStarsOptimizer() {
-    const defaultValue = [0, 0];
-    if (!!!DXYStars) return () => defaultValue;
-    if (!!DXYStars.values)
-      return (index) =>
-        DXYStars.values[index] ?? DXYStars.default ?? defaultValue;
-    if (!!DXYStars.default) return () => DXYStars.default;
-    return () => defaultValue;
+
+  const animationOptimizer = AnimationOptimizer(
+    AnimationListener,
+    OptimizationConfiguration
+  );
+
+  function GsapMaskNodeCallerProxy(index, onComplete = () => {}) {
+    GsapMaskNodeCaller(
+      heightPx,
+      index,
+      rect,
+      gsapMaskNodeConfiguration,
+      onComplete
+    );
   }
 
   // Give the current clicked textfield index with his center [ middle ] position
@@ -53,145 +61,12 @@ function animation(
   const texts = divMaskContainer.querySelectorAll(".text");
   // Get the size of the star
 
-  // For each animation, create an optimization caller
-  const OptimizationConfiguration = {
-    stop: {
-      star: {
-        value: true,
-        triggered: true,
-      },
-    },
-  };
-
   // TODO: Traduire par chatgpt
   // If the user ask for optimization
   // The caller will be swaped by an optmized one that return :
   // * Only a const
   // * The default one, configurated by the user
-  function getOptimizedFunction(animationType, animationName, key, f) {
-    // Vérification si f est une fonction, sinon transformer en fonction retournant la valeur
-    f = typeof f === "function" ? f : () => f;
 
-    // Vérification si la clé est optimisée
-    if (!(AnimationListener.optimised ?? []).includes(key)) return f;
-
-    const trigger =
-      OptimizationConfiguration[animationType][animationName].triggered;
-
-    const finalOptimized =
-      (AnimationListener.default[animationType]?.[animationName] ??
-        OptimizationConfiguration[animationType]?.[animationName]?.value) ||
-      f;
-    const finalOptimizedFunction =
-      typeof finalOptimized === "function"
-        ? finalOptimized
-        : () => finalOptimized;
-    let optimizedF = null;
-
-    function untilF(args) {
-      const value = f(args);
-      if (trigger !== value) return value;
-      return (optimizedF = finalOptimizedFunction)(args);
-    }
-
-    return function (args) {
-      return (optimizedF ?? untilF)(args);
-    };
-  }
-  const AnimationOptimizer = Object.entries(AnimationListener.functions).reduce(
-    (acc, [animationType, object]) => {
-      Object.entries(object).forEach(([animationName, f]) => {
-        const key = `${animationType}.${animationName}`;
-        const optimizedFunction = getOptimizedFunction(
-          animationType,
-          animationName,
-          key,
-          f
-        );
-        acc[key] = optimizedFunction;
-      });
-
-      return acc;
-    },
-    {}
-  );
-  function gsapMaskNodeCaller(index, onComplete = function () {}) {
-    const { from, to } = gsapMaskNodeConfiguration(heightPx, index);
-    gsap.fromTo(rect, from, {
-      ...to,
-      onComplete: onComplete,
-    });
-  }
-  function gsapAnimationStarCaller(
-    [dx, dy],
-    svgStarNode,
-    index,
-    middle,
-    corner
-  ) {
-    const { timeout, from, to, complete } = gsapAnimationStarConfiguration(
-      corner,
-      middle,
-      index
-    );
-    setTimeout(function () {
-      gsap.fromTo(
-        svgStarNode,
-        {
-          ...from,
-          x: from.x + dx,
-          y: from.y + dy,
-        },
-        {
-          ...to,
-          x: to.x + dx,
-          y: to.y + dy,
-          onComplete: () => {
-            gsap.fromTo(svgStarNode, {}, complete);
-          },
-        }
-      );
-    }, timeout);
-  }
-  function getFarestCorner(event, middle, index) {
-    const farestVertical = ["top", "bottom"].includes(
-      (farestConfiguration.farestCornerTopBottom ?? "").toLowerCase()
-    )
-      ? farestConfiguration.farestCornerTopBottom
-      : farestCornerTopBottom(event, middle, index);
-    const farestHorizontal = ["left", "right"].includes(
-      (farestConfiguration.farestCornerLeftRight ?? "").toLowerCase()
-    )
-      ? farestConfiguration.farestCornerLeftRight
-      : farestCornerLeftRight(event, middle, index);
-
-    return farestVertical + farestHorizontal;
-  }
-  /**
-   * Retrieves the farthest vertical corner from the given event's position.
-   * @param {event} {x: number, y: number} The position of the mouse
-   * @param {middle} {x: number, y: number} The middle of the text
-   * @param {index} number The index of the text
-   * @return {string} "top" or "bottom"
-   */
-  function farestCornerTopBottom(event, middle, index) {
-    if (index < texts.length / 2) {
-      return "bottom";
-    } else if (index > texts.length / 2) {
-      return "top";
-    } else {
-      return middle.y < event.y ? "top" : "bottom";
-    }
-  }
-  /**
-   * Retrieves the farthest horizontal corner from the given event's position.
-   * @param {event} {x: number, y: number} The position of the mouse
-   * @param {middle} {x: number, y: number} The middle of the text
-   * @return {string} "Left" or "Right"
-   */
-  function farestCornerLeftRight(event, middle) {
-    return event.x < middle.x ? "right" : "left";
-  }
   /**
      * Represents a map of corner names to their positions in 2D space.
      * Each key is a corner name (string), and each value is an object
@@ -269,15 +144,16 @@ function animation(
       activeMaskAnimation = false;
       activeTextField.index = index;
       activeTextField.middle = middle;
-      gsapMaskNodeCaller(index);
+      GsapMaskNodeCallerProxy(index);
 
       // Follow the rule of AnimationOptimizer
-      if (AnimationOptimizer["stop.star"](++numberOfClickUnderTextField))
+      if (animationOptimizer["stop.star"](++numberOfClickUnderTextField))
         return;
-      const corner = corners[getFarestCorner(event, middle, index)];
+      const corner =
+        corners[GetFarestCorner(event, middle, index, farestConfiguration)];
       // Prendre en compte le reverse !
 
-      const dxyReducer = DXYStarsOptimizer();
+      const dxyReducer = DXYStarsOptimizer(DXYStars);
       // Star animation
       OrderDisplayedStars(...Object.values(corner.reverse)).forEach(
         (index, index2) => {
@@ -285,9 +161,7 @@ function animation(
           if (!!!svgMaskNode) return;
           const dxy = dxyReducer(index);
 
-          console.log(index);
-
-          gsapAnimationStarCaller(
+          GsapAnimationStarCaller(
             [
               corner.reverse.x ? -dxy[0] : dxy[0],
               corner.reverse.y ? -dxy[1] : dxy[1],
@@ -295,7 +169,8 @@ function animation(
             svgStarNode,
             index2,
             middle,
-            corner
+            corner,
+            gsapAnimationStarConfiguration
           );
         }
       );
@@ -312,7 +187,7 @@ function animation(
           reactiveTextFieldMaskHeight
       )
         return;
-      gsapMaskNodeCaller(index, () => (activeMaskAnimation = true));
+      GsapMaskNodeCallerProxy(index, () => (activeMaskAnimation = true));
     });
   });
   // When the mouse is over the parent we change the mask position

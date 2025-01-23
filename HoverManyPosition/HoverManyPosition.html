@@ -89,11 +89,11 @@
         <div class="mask-container"></div>
       </div>
     </div>
-    <script src="./DynamiclyCreate.js"></script>
-    <script src="./Animation.js"></script>
-    <script>
+    <script type="module">
+      import { Animation } from "./Animation/index.js";
+      import { CreateTexts, CreateStars } from "./DynamiclyCreate.js";
       console.clear();
-      createTexts(
+      CreateTexts(
         [
           "SECTEURS",
           "Design et stratégies",
@@ -104,30 +104,35 @@
         document.querySelector(".default"),
         document.querySelector(".mask-container")
       );
-      createStars(
+      CreateStars(
         document.querySelector("#stars"),
         document.querySelector("#star"),
         3
       );
       const halfStarSize =
         document.querySelector("#star").getBoundingClientRect().width / 2;
-      animation(
-        (divMaskContainer = document.querySelector(".mask")),
-        (svgMaskNode = document.querySelector("#svg-mask")),
-        (svgStarNodes = document.querySelectorAll("#star")),
+
+      const divMaskContainer = document.querySelector(".mask");
+      const svgMaskNode = document.querySelector("#svg-mask");
+      const svgStarNodes = document.querySelectorAll("#star");
+      const DXYStars = {
+        values: [
+          [-20 - halfStarSize, -20 - halfStarSize],
+          [-halfStarSize, -20 - halfStarSize],
+          [-20 - halfStarSize, -halfStarSize],
+          [-halfStarSize, -halfStarSize],
+        ],
+        default: [0, 0],
+      };
+      Animation(
+        divMaskContainer,
+        svgMaskNode,
+        svgStarNodes,
         function OrderDisplayedStars(reverseX, reverseY) {
           console.log(reverseX);
           return reverseX ? [0, 3, 2, 1] : [0, 3, 2, 1];
         },
-        (DXYStars = {
-          values: [
-            [-20 - halfStarSize, -20 - halfStarSize],
-            [-halfStarSize, -20 - halfStarSize],
-            [-20 - halfStarSize, -halfStarSize],
-            [-halfStarSize, -halfStarSize],
-          ],
-          default: [0, 0],
-        }),
+        DXYStars,
         function gsapAnimationStarConfiguration(corner, middle, index) {
           return {
             timeout: 100 * index,
