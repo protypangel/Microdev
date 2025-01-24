@@ -1,3 +1,18 @@
+/**
+     * Represents a map of corner names to their positions in 2D space.
+     * Each key is a corner name (string), and each value is an object
+     * containing the x and y coordinates of the corner.
+     *
+     * The key is gived by farestCornerTopBottom and farestCornerLeftRight
+     * Example :
+        const corner = corners[
+            farestCornerTopBottom(event, middle, index) +
+              farestCornerLeftRight(event, middle)
+        ];
+     *
+     * @type {Map<string, {x: number, y: number}>}
+     */
+
 export class Corners {
   constructor(divMaskContainer) {
     this._corners = Object.entries({
