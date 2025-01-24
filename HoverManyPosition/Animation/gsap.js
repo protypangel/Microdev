@@ -6,8 +6,18 @@ export function GsapMaskNodeCaller(
   onComplete = function () {}
 ) {
   const { from, to } = gsapMaskNodeConfiguration(heightPx, index);
-  gsap.fromTo(rect, from, {
-    ...to,
+  const { x, y, ...rest } = to;
+  return gsap.fromTo(rect, from, {
+    ...rest,
+    attr: {
+      y: to.y,
+    },
+    duration: Math.ceil(
+      Math.min(
+        3,
+        Math.abs(parseInt(rect.getAttribute("y")) - parseInt(to.y)) / 50
+      )
+    ),
     onComplete: onComplete,
   });
 }

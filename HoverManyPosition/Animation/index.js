@@ -1,8 +1,8 @@
 import { AnimationOptimizer, DXYStarsOptimizer } from "./optimizer.js";
 import { GsapMaskNodeCaller, GsapAnimationStarCaller } from "./gsap.js";
-import { GetCorners, GetFarestCorner } from "./farestCorner.js";
+import { Corners } from "./farestCorner.js";
 import { OptimizationConfiguration } from "./configuration.js";
-import { GetMiddleText } from "./getMiddle.js";
+import { GetTextFieldCenter, Coordinates } from "./classes/Coordonates.js";
 
 export function Animation(
   divMaskContainer,
@@ -28,6 +28,7 @@ export function Animation(
   // The distance beetween the center that's permit to reactive the mask mouvement
   const reactiveTextFieldMaskHeight = (heightPx * 3) / 4;
   let numberOfClickUnderTextField = 0;
+
   // Sizing the rect's height dynamically
   // The mask's height has the same each textfield's height
   // Remember that's each textfield has the same height
@@ -39,7 +40,7 @@ export function Animation(
   );
 
   function GsapMaskNodeCallerProxy(index, onComplete = () => {}) {
-    GsapMaskNodeCaller(
+    return GsapMaskNodeCaller(
       heightPx,
       index,
       rect,
@@ -48,16 +49,46 @@ export function Animation(
     );
   }
 
-  // Give the current clicked textfield index with his center [ middle ] position
-  let activeTextField = {
-    index: 0,
-    middle: {
-      x: 0,
-      y: 0,
-    },
-  };
-  // Know if the animation scrolling mask is active or not
-  let activeMaskAnimation = true;
+  class ActivedTextField {
+    constructor(index = 0, center = new Coordinates(0, 0)) {
+      this._index = index;
+      this._center = center;
+    }
+  }
+  const state = new (class GsapFacade {
+    constructor() {
+      this._activeMaskAnimation = true;
+      this._activeTextField = new ActivedTextField();
+    }
+    set activeTextField(textfieldData) {
+      const { index } = textfieldData;
+      this._activeMaskAnimation = false;
+      this._activeTextField = textfieldData;
+      this._gsapMaskNode = GsapMaskNodeCallerProxy(
+        index,
+        () => (this._gsapMaskNode = undefined)
+      );
+    }
+    set activeMaskAnimation({ clientY, reactiveTextFieldMaskHeight, index }) {
+      if (
+        this._activeMaskAnimation ||
+        index === this._activeTextField.index ||
+        Math.abs(this._activeTextField.center.y - clientY) <
+          reactiveTextFieldMaskHeight
+      )
+        return;
+      if (this._gsapMaskNode) this._gsapMaskNode.kill();
+      this._activeMaskAnimation = true;
+    }
+    get activeMaskAnimation() {
+      return new Promise((resolve, reject) => {
+        if (this._activeMaskAnimation) {
+          resolve();
+        } else reject();
+      });
+    }
+  })();
+
   // Get all texts containers
   const texts = divMaskContainer.querySelectorAll(".text");
   /**
@@ -74,7 +105,7 @@ export function Animation(
      *
      * @type {Map<string, {x: number, y: number}>}
      */
-  const corners = GetCorners(divMaskContainer);
+  const corners = new Corners(divMaskContainer);
 
   /**
    * Sets up event listeners for each text field to handle animations.
@@ -90,20 +121,24 @@ export function Animation(
    * @param {number} index - The index of the textfield
    */
   texts.forEach((text, index) => {
-    const middle = GetMiddleText(text);
+    const center = GetTextFieldCenter(text);
 
     // Stop the animation when the mouse clicked on a text
     text.addEventListener("click", (event) => {
-      activeMaskAnimation = false;
-      activeTextField.index = index;
-      activeTextField.middle = middle;
-      GsapMaskNodeCallerProxy(index);
+      state.activeTextField = {
+        index,
+        center,
+      };
 
       // Follow the rule of AnimationOptimizer
       if (animationOptimizer["stop.star"](++numberOfClickUnderTextField))
         return;
-      const corner =
-        corners[GetFarestCorner(event, middle, index, farestConfiguration)];
+      const corner = corners.GetFarestCorner(
+        event,
+        center,
+        index,
+        farestConfiguration
+      );
       // Prendre en compte le reverse !
 
       const dxyReducer = DXYStarsOptimizer(DXYStars);
@@ -121,7 +156,7 @@ export function Animation(
             ],
             svgStarNode,
             index2,
-            middle,
+            center,
             corner,
             gsapAnimationStarConfiguration
           );
@@ -133,26 +168,30 @@ export function Animation(
      * - the dy between the middle of the textfield and the cursor is higher than the size of the textfield
      */
     text.addEventListener("mousemove", (event) => {
-      if (
-        activeMaskAnimation ||
-        index === activeTextField.index ||
-        Math.abs(activeTextField.middle.y - event.clientY) <=
-          reactiveTextFieldMaskHeight
-      )
-        return;
-      GsapMaskNodeCallerProxy(index, () => (activeMaskAnimation = true));
+      state.activeMaskAnimation = {
+        clientY: event.clientY,
+        reactiveTextFieldMaskHeight,
+        index,
+      };
     });
   });
-  // When the mouse is over the parent we change the mask position
-  divMaskContainer.addEventListener("mousemove", (event) => {
-    if (!activeMaskAnimation) return;
+
+  function GenerateRectPositionY(event) {
     const rectHeight = rect.getBoundingClientRect().height;
     const parentRect = divMaskContainer.getBoundingClientRect();
-    const mouseY = event.clientY - parentRect.top;
-    const newY = Math.min(
-      Math.max(mouseY - rectHeight / 2, 0),
-      parentRect.height - rectHeight
-    );
-    rect.setAttribute("y", `${newY}px`);
+
+    const max = parentRect.height - rectHeight;
+    const delta = rectHeight / 2 + parentRect.top;
+
+    return Math.min(Math.max(event.clientY - delta, 0), max);
+  }
+
+  divMaskContainer.addEventListener("mousemove", async (event) => {
+    state.activeMaskAnimation
+      .then((_) => {
+        const newY = GenerateRectPositionY(event);
+        rect.setAttribute("y", `${newY}px`);
+      })
+      .catch((_) => {});
   });
 }

@@ -129,8 +129,7 @@
         svgMaskNode,
         svgStarNodes,
         function OrderDisplayedStars(reverseX, reverseY) {
-          console.log(reverseX);
-          return reverseX ? [0, 3, 2, 1] : [0, 3, 2, 1];
+          return [0, 3, 2, 1];
         },
         DXYStars,
         function gsapAnimationStarConfiguration(corner, middle, index) {
@@ -155,9 +154,7 @@
         function gsapMaskNodeConfiguration(heightPx, index) {
           return {
             from: {},
-            to: {
-              attr: { y: heightPx * index },
-            },
+            to: { y: heightPx * index },
           };
         },
         {
