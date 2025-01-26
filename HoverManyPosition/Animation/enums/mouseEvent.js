@@ -54,7 +54,14 @@ const ProxyTempalteMouseEvent = {
   MaskMouseMoveListener: function (gsapFacade, data, divMaskContainer, f) {
     f(gsapFacade, data, divMaskContainer);
   },
-  TextContainer: function (gsapFacade, data, text, index, f) {
+  TextContainer: function (
+    gsapFacade,
+    data,
+    text,
+    index,
+    OnClickElementSelected,
+    f
+  ) {
     const center = GetTextFieldCenter(text);
     // Stop the animation when the mouse clicked on a text
     text.addEventListener("click", (event) => {
@@ -65,6 +72,7 @@ const ProxyTempalteMouseEvent = {
         },
         event,
       };
+      OnClickElementSelected(index);
     });
     f(gsapFacade, data, text, index, center);
   },

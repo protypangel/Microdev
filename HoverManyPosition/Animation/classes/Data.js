@@ -7,7 +7,6 @@ export class Data {
     svgMaskNode,
     svgStarNodes,
     AnimationListener,
-    OptimizationConfiguration,
     gsapMaskNodeConfiguration,
     DXYStars
   ) {
@@ -18,10 +17,7 @@ export class Data {
       divMaskContainer.getBoundingClientRect().height / this._nbTextField;
     this._reactiveTextFieldMaskHeight = (this._heightRectNode * 3) / 4;
     this._numberOfClickUnderTextField = 0;
-    this._animationOptimizer = AnimationOptimizer(
-      AnimationListener,
-      OptimizationConfiguration
-    );
+    this._animationOptimizer = AnimationOptimizer(AnimationListener);
     this._rectNode.setAttribute("height", `${this._heightRectNode}px`);
     this._DXYStars = DXYStars;
     this._gsapMaskNodeConfiguration = gsapMaskNodeConfiguration;

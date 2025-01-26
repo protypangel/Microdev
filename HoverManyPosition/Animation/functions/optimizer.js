@@ -1,6 +1,19 @@
-function getOptimizedFunction(
+import { OptimizationConfiguration } from "./configuration.js";
+
+/**
+ * Remember the structure of OptimizerCaller definied by the user :
+ * `animationListener: { function: { animationType : { stop: f } } }`
+ *
+ * @param {*} animationListener the optimizer configuration definied by the user
+ * @param {*} optimizationConfiguration
+ * @param {*} animationType animation's type
+ * @param {*} animationName animation's name
+ * @param {string} key the name of the optimizer function
+ * @param {*} f the function that was defined by the user
+ * @returns a function that's will be called by the user
+ */
+function StrategyOptimizedFunction(
   animationListener,
-  optimizationConfiguration,
   animationType,
   animationName,
   key,
@@ -11,10 +24,10 @@ function getOptimizedFunction(
   // Vérification si la clé est optimisée
   if (!(animationListener.optimised ?? []).includes(key)) return f;
   const trigger =
-    optimizationConfiguration[animationType][animationName].triggered;
+    OptimizationConfiguration[animationType][animationName].triggered;
   const finalOptimized =
     (animationListener.default[animationType]?.[animationName] ??
-      optimizationConfiguration[animationType]?.[animationName]?.value) ||
+      OptimizationConfiguration[animationType]?.[animationName]?.value) ||
     f;
   const finalOptimizedFunction =
     typeof finalOptimized === "function"
@@ -30,18 +43,18 @@ function getOptimizedFunction(
     return (optimizedF ?? untilF)(args);
   };
 }
-
-export function AnimationOptimizer(
-  animationListener,
-  optimizationConfiguration
-) {
+/**
+ * Create a map for each functions in the animationListener.
+ * The key is the fullname of the function.
+ * The value is the StrategyOptimizedFunction
+ */
+export function AnimationOptimizer(animationListener) {
   return Object.entries(animationListener.functions).reduce(
     (acc, [animationType, object]) => {
       Object.entries(object).forEach(([animationName, f]) => {
         const key = `${animationType}.${animationName}`;
-        const optimizedFunction = getOptimizedFunction(
+        const optimizedFunction = StrategyOptimizedFunction(
           animationListener,
-          optimizationConfiguration,
           animationType,
           animationName,
           key,
