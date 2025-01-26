@@ -12,12 +12,7 @@ export function GsapMaskNodeCaller(
     attr: {
       y: to.y,
     },
-    duration: Math.ceil(
-      Math.min(
-        3,
-        Math.abs(parseInt(rect.getAttribute("y")) - parseInt(to.y)) / 50
-      )
-    ),
+    duration: 1,
     onComplete: onComplete,
   });
 }

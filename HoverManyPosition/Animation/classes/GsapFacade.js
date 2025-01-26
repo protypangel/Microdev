@@ -1,6 +1,9 @@
 import { Coordinates } from "./Coordonates.js";
-import { GsapMaskNodeCaller, GsapAnimationStarCaller } from "../gsap.js";
-import { DXYStarsOptimizer } from "../optimizer.js";
+import {
+  GsapMaskNodeCaller,
+  GsapAnimationStarCaller,
+} from "../functions/gsap.js";
+import { DXYStarsOptimizer } from "../functions/optimizer.js";
 class ActivedTextField {
   constructor(index = 0, center = new Coordinates(0, 0)) {
     this._index = index;
@@ -12,7 +15,8 @@ export class GsapFacade {
     data,
     farestConfiguration,
     gsapAnimationStarConfiguration,
-    orderDisplayedStars
+    orderDisplayedStars,
+    ElementSelectedListener
   ) {
     this._activeMaskAnimation = true;
     this._activeTextField = new ActivedTextField();
@@ -20,9 +24,17 @@ export class GsapFacade {
     this._farestConfiguration = farestConfiguration;
     this._gsapAnimationStarConfiguration = gsapAnimationStarConfiguration;
     this._orderDisplayedStars = orderDisplayedStars;
+    this._ElementSelectedListener = ElementSelectedListener;
   }
+  /**
+   * The mask select the textfield index
+   * The mouse event will be lock
+   * The animation of star is launch
+   */
   set activeTextField({ event, textfieldData }) {
     const { index, center } = textfieldData;
+    if (index === this._activeTextField.index) return;
+    this._ElementSelectedListener(index);
     this._activeMaskAnimation = false;
     this._activeTextField = textfieldData;
     this._gsapMaskNode = this._GsapMaskNodeCallerProxy(
@@ -38,8 +50,6 @@ export class GsapFacade {
       index,
       this._farestConfiguration
     );
-    // Prendre en compte le reverse !
-
     const dxyReducer = DXYStarsOptimizer(this._data.DXYStars);
     // Star animation
     this._orderDisplayedStars(...Object.values(corner.reverse)).forEach(
@@ -61,12 +71,11 @@ export class GsapFacade {
       }
     );
   }
-  set activeMaskAnimation({ clientY, index }) {
+  set activeMaskAnimation({ index, conditionF }) {
     if (
       this._activeMaskAnimation ||
       index === this._activeTextField.index ||
-      Math.abs(this._activeTextField.center.y - clientY) <
-        this._data._reactiveTextFieldMaskHeight
+      conditionF()
     )
       return;
     if (this._gsapMaskNode) this._gsapMaskNode.kill();

@@ -1,5 +1,5 @@
-import { AnimationOptimizer } from "../optimizer.js";
-import { Corners } from "../farestCorner.js";
+import { AnimationOptimizer } from "../functions/optimizer.js";
+import { Corners } from "../functions/farestCorner.js";
 
 export class Data {
   constructor(
